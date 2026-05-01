@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>はるよよスタジオ</title>
+    <style>
+        /* DAW風ダークモードデザイン */
+        :root {
+            --bg-color: #121212;
+            --panel-color: #1e1e1e;
+            --accent-color: #00d1ff;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* パスワード画面 */
+        #auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        input[type="password"] {
+            background: #2a2a2a;
+            border: 1px solid var(--accent-color);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        /* メインコンテンツ（初期は非表示） */
+        #main-content {
+            display: none;
+            width: 90%;
+            max-width: 800px;
+            padding: 40px 0;
+        }
+
+        h1 {
+            border-left: 5px solid var(--accent-color);
+            padding-left: 15px;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        /* 楽曲カード */
+        .track-card {
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .track-header {
+            padding: 15px 20px;
+            background: #252525;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .track-title {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+
+        /* アコーディオン（歌詞） */
+        .lyrics-btn {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .lyrics-btn:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .lyrics-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            background: #181818;
+        }
+
+        .lyrics-inner {
+            padding: 20px;
+            line-height: 1.8;
+            white-space: pre-wrap; /* 改行を反映 */
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- パスワード入力エリア -->
+    <div id="auth-overlay">
+        <h2 style="color: var(--accent-color)">はるよよスタジオへようこそ！</h2>
+        <input type="password" id="pass-input" placeholder="パスワードを入力してね" oninput="checkPassword(this.value)">
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div id="main-content">
+        <h1>どれを聴く？</h1>
+        <div id="track-list">
+            <!-- JSでここに曲が追加されます -->
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. 曲データの管理（ここを編集して追加）
+        // ==========================================
+        const SONGS = [
+            {
+                title: "夜更かしとブルーライト",
+                videoSrc: "夜更かしとブルーライト _ 初音ミクV6.mp4", // mp4ファイルのパス
+                lyrics: "真夜中に点滅するブルーライト指先は泳いでる画面の向こうの嘘飲みかけたキャラメルは甘くてぬるくてもういいや間違えて夢を捨てないようにポツリ、ポツリ、ポツリ、雨音みたいに夜の静寂に落ちていったねぇ誰か気づいてよでも、見つけないで更新ボタンをなぞるたび削られていく安らぎと癒しの時間ハートの数だけで評価が決められていくそれさえもアルゴリズムチクリ、チクリ、チクリ、胸の奥刺さったままの本音がまだ震えてるねぇ誰か気づいてよでも、何も言わないでブルーライトは充電されたまま思考の回路は何かを欲しているだんだん朝日が世界を照らしだして寝つけないポンコツをカラスが笑いだしたポツリ、ポツリ、ポツリ、雨音みたいに夜の静寂に落ちていったねぇ誰か愛してよ夜更かしと点滅するブルーライトこんな生活繰り返す今日もまた何か探してる飲みかけたキャラメルは甘くてぬるいけどいいや飲み干して夢をみよう"
+            },
+            {
+                title: "acoustic",
+                videoSrc: "acoustic _ 音街ウナ.mp4", // mp4ファイルのパス
+                lyrics: "真夜中に点滅するブルーライト指先は泳いでる画面の向こうの嘘飲みかけたキャラメルは甘くてぬるくてもういいや間違えて夢を捨てないようにポツリ、ポツリ、ポツリ、雨音みたいに夜の静寂に落ちていったねぇ誰か気づいてよでも、見つけないで更新ボタンをなぞるたび削られていく安らぎと癒しの時間ハートの数だけで評価が決められていくそれさえもアルゴリズムチクリ、チクリ、チクリ、胸の奥刺さったままの本音がまだ震えてるねぇ誰か気づいてよでも、何も言わないでブルーライトは充電されたまま思考の回路は何かを欲しているだんだん朝日が世界を照らしだして寝つけないポンコツをカラスが笑いだしたポツリ、ポツリ、ポツリ、雨音みたいに夜の静寂に落ちていったねぇ誰か愛してよ夜更かしと点滅するブルーライトこんな生活繰り返す今日もまた何か探してる飲みかけたキャラメルは甘くてぬるいけどいいや飲み干して夢をみよう"
+            },
+           
+            // 以降、コピーして増やせます
+        ];
+
+        // ==========================================
+        // 2. パスワード認証機能
+        // ==========================================
+        function checkPassword(value) {
+            const SECRET = "8644";
+            if (value === SECRET) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                renderSongs();
+            }
+        }
+
+        // ==========================================
+        // 3. 楽曲リストの描画
+        // ==========================================
+        function renderSongs() {
+            const list = document.getElementById('track-list');
+            
+            SONGS.forEach((song, index) => {
+                const card = document.createElement('div');
+                card.className = 'track-card';
+                
+                card.innerHTML = `
+                    <div class="track-header">
+                        <span class="track-title">TRACK ${index + 1}: ${song.title}</span>
+                        <button class="lyrics-btn" onclick="toggleLyrics(${index})">LYRICS</button>
+                    </div>
+                    <video controls>
+                        <source src="${song.videoSrc}" type="video/mp4">
+                        お使いのブラウザは動画再生に対応していません。
+                    </video>
+                    <div id="lyrics-${index}" class="lyrics-content">
+                        <div class="lyrics-inner">${song.lyrics}</div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // アコーディオンの開閉
+        function toggleLyrics(index) {
+            const content = document.getElementById(`lyrics-${index}`);
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+    </script>
+</body>
+</html>
